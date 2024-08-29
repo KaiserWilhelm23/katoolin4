@@ -32,6 +32,7 @@ from math import ceil
 import platform
 import shlex
 import textwrap
+import subprocess
 
 try:
     import apt
@@ -690,6 +691,7 @@ class APTManager:
             self._cache.close()
         self._cache = apt.Cache()
 
+
     def update(self):
         if os.system(
                 "apt-get -m -y {} update".format("-qq" if self._silent else "-q")
@@ -872,16 +874,21 @@ def print_logo():
     The obligatory ascii art
     """
     print("""
- {f}██{b}╗  {f}██{b}╗ {f}█████{b}╗ {f}████████{b}╗ {f}██████{b}╗  {f}██████{b}╗ {f}██{b}╗     {f}██{b}╗{f}███{b}╗   {f}██{b}╗{s}██████{b}╗
- {f}██{b}║ {f}██{b}╔╝{f}██{b}╔══{f}██{b}╗╚══{f}██{b}╔══╝{f}██{b}╔═══{f}██{b}╗{f}██{b}╔═══{f}██{b}╗{f}██{b}║     {f}██{b}║{f}████{b}╗  {f}██{b}║╚════{s}██{b}╗
- {f}█████{b}╔╝ {f}███████{b}║   {f}██{b}║   {f}██{b}║   {f}██{b}║{f}██{b}║   {f}██{b}║{f}██{b}║     {f}██{b}║{f}██{b}╔{f}██{b}╗ {f}██{b}║ {s}█████{b}╔╝
- {f}██{b}╔═{f}██{b}╗ {f}██{b}╔══{f}██{b}║   {f}██{b}║   {f}██{b}║   {f}██{b}║{f}██{b}║   {f}██{b}║{f}██{b}║     {f}██{b}║{f}██{b}║╚{f}██{b}╗{f}██{b}║ ╚═══{s}██{b}╗
- {f}██{b}║  {f}██{b}╗{f}██{b}║  {f}██{b}║   {f}██{b}║   ╚{f}██████{b}╔╝╚{f}██████{b}╔╝{f}███████{b}╗{f}██{b}║{f}██{b}║ ╚{f}████{b}║{s}██████{b}╔╝
- {b}╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝╚═════╝
+  _        _______ _________ _______  _______  _       _________ _           ___   
+| \    /\(  ___  )\__   __/(  ___  )(  ___  )( \      \__   __/( (    /|   /   )  
+|  \  / /| (   ) |   ) (   | (   ) || (   ) || (         ) (   |  \  ( |  / /) |  
+|  (_/ / | (___) |   | |   | |   | || |   | || |         | |   |   \ | | / (_) (_ 
+|   _ (  |  ___  |   | |   | |   | || |   | || |         | |   | (\ \) |(____   _)
+|  ( \ \ | (   ) |   | |   | |   | || |   | || |         | |   | | \   |     ) (  
+|  /  \ \| )   ( |   | |   | (___) || (___) || (____/\___) (___| )  \  |     | |  
+|_/    \/|/     \|   )_(   (_______)(_______)(_______/\_______/|/    )_)     (_)  
+                                                                                  
 """.format(f=Terminal.red, b=Terminal.black, s=Terminal.red), end=Terminal.reset)
     print("""{} ~~~~~{{ Author: s-h-3-l-l | Homepage: https://github.com/s-h-3-l-l }}~~~~~
 {}""".format(Terminal.white, Terminal.reset))
     print()
+
+    
 
 def print_help():
     print("""
@@ -1156,9 +1163,47 @@ modify your package cache in any other way while
 katoolin3 is still running!
 {}""".format(Terminal.red, Terminal.reset))
 
+
+def fix_kali_gpg_error():
+    """Manually fetch the missing GPG key for Kali Linux and update the package list."""
+    key_url = "https://archive.kali.org/archive-key.asc"
+    key_file = "/tmp/kali-archive-key.asc"
+    
+    # Download the GPG key
+    download_command = f"wget -q -O {key_file} {key_url}"
+    result = subprocess.run(download_command, shell=True)
+    
+    if result.returncode != 0:
+        print("Error downloading the GPG key.")
+        return
+    
+    print("GPG key downloaded successfully.")
+    
+    # Add the GPG key to the system
+    add_key_command = f"sudo apt-key add {key_file}"
+    result = subprocess.run(add_key_command, shell=True, text=True, capture_output=True)
+    
+    if result.returncode != 0:
+        print(f"Error adding GPG key: {result.stderr.strip()}")
+        return
+    
+    print("GPG key added successfully.")
+    
+    # Update the package list
+    update_command = "sudo apt update"
+    result = subprocess.run(update_command, shell=True, text=True, capture_output=True)
+    
+    if result.returncode != 0:
+        print(f"Error updating package list: {result.stderr.strip()}")
+    else:
+        print(f"Package list updated successfully: {result.stdout.strip()}")
+
+
+
 if __name__ == "__main__":
     try:
         print_logo()
+        fix_kali_gpg_error()
         handle_old_katoolin()
         with APTManager() as APT: # this will be used globally
             print()
