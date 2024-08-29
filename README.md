@@ -1,5 +1,5 @@
 # katoolin4
-Katoolin4 brings all programs available in Kali Linux to Debian and Ubuntu.
+Katoolin4 brings all programs available in Kali Linux to Debian and Ubuntu. Read TODO for plans 
 
 ### Description
 This program is a port of [katoolin](https://github.com/LionSec/katoolin) from [LionSec](https://github.com/LionSec) to python3. Katoolin4 offers several improvements over katoolin and katoolin3:
